@@ -139,7 +139,7 @@ def main():
         colunas_relatorio = [
             "value",
             "creationDate",
-            "totals_Shipping",
+            "totals",
             "orderId",
             "sellerName",
             "statusDescription",
