@@ -22,12 +22,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: rodar script python
-        run: python src/gerar_csv_pedidos.py
+        run: python src/csv_pedidos_geral.py
 
       - name: commit csv atualizado
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add output/pedidos.csv
+          git add output/pedidos_geral.csv
           git commit -m "atualiza pedidos.csv automaticamente" || echo "sem alterações"
           git push
