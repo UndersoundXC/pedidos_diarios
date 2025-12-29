@@ -11,7 +11,7 @@ ENV = "vtexcommercestable"
 APP_KEY = os.getenv("VTEX_APP_KEY")
 APP_TOKEN = os.getenv("VTEX_APP_TOKEN")
 
-OUTPUT_PATH = "output/csv-pedidos_gerais.csv"
+OUTPUT_PATH = "output/pedidos_gerais.csv"
 
 headers = {
     "X-VTEX-API-AppKey": APP_KEY,
