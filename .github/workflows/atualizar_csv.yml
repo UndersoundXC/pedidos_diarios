@@ -23,8 +23,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run script
-        run: python src/csv_pedidos_geral.py
+      - name: Rodar script Itens VTEX
+        run: python src/pedidos_itens.py
+
+      - name: Rodar script Geral VTEX
+        run: python src/pedidos_gerais.py
 
       - name: Commit CSV
         run: |
