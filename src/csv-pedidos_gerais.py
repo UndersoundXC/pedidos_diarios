@@ -123,16 +123,9 @@ def main():
         f_utc = fim.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         todos_pedidos.extend(coletar_pedidos(i_utc, f_utc))
 
-    if todos_pedidos:
-        df = pd.json_normalize(todos_pedidos, sep="_")
-        
-        os.makedirs("output", exist_ok=True)
-        df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8-sig")
+    print(f"Total de pedidos coletados: {len(todos_pedidos)}")
 
-        print(f"CSV gerado: {OUTPUT_PATH} ({len(df)} linhas)")
+    df = pd.json_normalize(todos_pedidos, sep="_")
+    df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8-sig")
 
-    else:
-        print("⚠️ Nenhum pedido encontrado.")
-
-if __name__ == "__main__":
-    main()
+    print(f"CSV gerado: {OUTPUT_PATH} ({len(df)} linhas)")
