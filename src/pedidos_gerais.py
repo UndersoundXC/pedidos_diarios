@@ -22,7 +22,7 @@ headers = {
 # ========== FUSO HORÁRIO ==========
 TZ_BR = timezone(timedelta(hours=-3))
 
-# ========== GERAR INTERVALO DE DATAS (BRASÍLIA) ==========
+# ========== GERAR INTERVALO (ONTEM – BRASÍLIA) ==========
 def gerar_intervalo():
     agora_br = datetime.now(TZ_BR)
 
@@ -35,15 +35,6 @@ def gerar_intervalo():
     )
 
     return [(inicio_br, fim_br)]
-
-# ========== EXTRAI CAMPOS DE LISTAS ==========
-def extrair_valores_lista(dados, coluna, chave_id='id', chave_valor='value', prefixo=None):
-    valores = {}
-    for item in dados.get(coluna, []):
-        if isinstance(item, dict) and chave_id in item and chave_valor in item:
-            nome_coluna = f"{prefixo or coluna}_{item[chave_id]}"
-            valores[nome_coluna] = item[chave_valor]
-    return valores
 
 # ========== COLETA DE PEDIDOS ==========
 def coletar_pedidos(data_inicio_utc, data_fim_utc):
@@ -69,7 +60,7 @@ def coletar_pedidos(data_inicio_utc, data_fim_utc):
 
         print(f"📄 Página {pagina}: {len(lista)} pedidos")
 
-        pedidos_validos_pagina = []
+        pedidos_validos = []
 
         for pedido_resumo in tqdm(lista, desc=f"Detalhes página {pagina}"):
             order_id = pedido_resumo.get("orderId")
@@ -91,25 +82,31 @@ def coletar_pedidos(data_inicio_utc, data_fim_utc):
             if not pedido or pedido.get("status") == "canceled":
                 continue
 
-            # Marketing / UTM
-            marketing_data = pedido.get("marketingData") or {}
-            pedido["utmSource"] = marketing_data.get("utmSource")
-            pedido["utmMedium"] = marketing_data.get("utmMedium")
-            pedido["utmCampaign"] = marketing_data.get("utmCampaign")
+            # -------- MARKETING / UTM --------
+            marketing = pedido.get("marketingData") or {}
+            pedido["utmSource"] = marketing.get("utmSource")
+            pedido["utmMedium"] = marketing.get("utmMedium")
+            pedido["utmCampaign"] = marketing.get("utmCampaign")
 
-            # Seller principal
+            # -------- SELLER PRINCIPAL --------
             sellers = pedido.get("sellers", [])
             pedido["sellerName"] = sellers[0].get("name") if sellers else None
 
-            # Data de extração em Brasília
+            # -------- TOTALS NORMALIZADOS --------
+            for total in pedido.get("totals", []):
+                if isinstance(total, dict):
+                    col = f"totals_{total.get('id')}"
+                    pedido[col] = total.get("value")
+
+            # -------- DATA DE EXTRAÇÃO --------
             pedido["data_extracao"] = datetime.now(TZ_BR).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
 
             pedidos.append(pedido)
-            pedidos_validos_pagina.append(pedido)
+            pedidos_validos.append(pedido)
 
-        if not pedidos_validos_pagina:
+        if not pedidos_validos:
             print(f"✅ Nenhum pedido válido na página {pagina} — encerrando.")
             break
 
@@ -122,39 +119,47 @@ def coletar_pedidos(data_inicio_utc, data_fim_utc):
 def main():
     os.makedirs("output", exist_ok=True)
 
-    intervalos = gerar_intervalo()
     todos_pedidos = []
 
-    for inicio_br, fim_br in intervalos:
+    for inicio_br, fim_br in gerar_intervalo():
         inicio_utc = inicio_br.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         fim_utc = fim_br.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         print(f"🔎 Coletando pedidos de {inicio_br} até {fim_br} (Brasília)")
         todos_pedidos.extend(coletar_pedidos(inicio_utc, fim_utc))
 
-    if todos_pedidos:
-        df = pd.json_normalize(todos_pedidos, sep="_")
-
-        # 🔽 COLUNAS USADAS NO RELATÓRIO
-        colunas_relatorio = [
-            "value",
-            "creationDate",
-            "totals",
-            "orderId",
-            "sellerName",
-            "statusDescription",
-            "utmSource",
-            "utmMedium",
-            "utmCampaign",
-            "data_extracao"
-        ]
-
-        df = df[colunas_relatorio]
-
-        df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8-sig")
-        print(f"✅ CSV gerado: {OUTPUT_PATH} ({len(df)} linhas)")
-    else:
+    if not todos_pedidos:
         print("⚠️ Nenhum pedido encontrado.")
+        return
+
+    df = pd.json_normalize(todos_pedidos, sep="_")
+
+    # -------- COLUNAS DO RELATÓRIO --------
+    colunas_relatorio = [
+        "orderId",
+        "creationDate",
+        "value",
+        "sellerName",
+        "statusDescription",
+        "utmSource",
+        "utmMedium",
+        "utmCampaign",
+        "totals_Items",
+        "totals_Discounts",
+        "totals_Shipping",
+        "totals_Tax",
+        "data_extracao"
+    ]
+
+    # Garante que todas existam
+    for col in colunas_relatorio:
+        if col not in df.columns:
+            df[col] = None
+
+    df = df[colunas_relatorio]
+
+    df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8-sig")
+    print(f"✅ CSV gerado: {OUTPUT_PATH} ({len(df)} linhas)")
 
 if __name__ == "__main__":
     main()
