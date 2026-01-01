@@ -26,7 +26,7 @@ TZ_BR = timezone(timedelta(hours=-3))
 def gerar_intervalo():
     agora_br = datetime.now(TZ_BR)
 
-    inicio_br = (agora_br - timedelta(days=4)).replace(
+    inicio_br = (agora_br - timedelta(days=5)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
 
