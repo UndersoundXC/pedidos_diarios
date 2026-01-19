@@ -6,7 +6,7 @@ import time
 import os
 
 # ========== CONFIGURAÇÕES ==========
-ACCOUNT = os.getenv("VTEX_ACCOUNT_NAME", "senffnet")
+ACCOUNT = os.getenv("VTEX_ACCOUNT_NAME")
 ENV = "vtexcommercestable"
 APP_KEY = os.getenv("VTEX_APP_KEY")
 APP_TOKEN = os.getenv("VTEX_APP_TOKEN")
