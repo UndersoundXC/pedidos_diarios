@@ -144,6 +144,7 @@ def main():
         "utmSource",
         "utmMedium",
         "utmCampaign",
+        "email",
         "totals_Items",
         "totals_Discounts",
         "totals_Shipping",
